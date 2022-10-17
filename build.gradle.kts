@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.omgkanamikun"
-version = "0.0.1-SNAPSHOT"
+version = "1.0"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
@@ -23,6 +23,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.1")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
 }

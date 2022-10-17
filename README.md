@@ -1,4 +1,4 @@
-# web-app-kt
+# Kotlin Web Application
 
 ### *Description*
 
