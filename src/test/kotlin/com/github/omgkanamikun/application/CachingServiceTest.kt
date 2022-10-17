@@ -1,6 +1,8 @@
 package com.github.omgkanamikun.application
 
-import com.github.omgkanamikun.application.CachingService.Entity.Person
+import com.github.omgkanamikun.application.model.Entity
+import com.github.omgkanamikun.application.service.CachingService
+import com.github.omgkanamikun.application.util.randomNumberBounded
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -29,7 +31,9 @@ internal class CachingServiceTest {
 
     @AfterEach
     fun tearDown() {
-        logger.info("stats after: ${cachingService.stats()}")
+        cachingService.stats().subscribe {
+            logger.info("stats after: $it")
+        }
     }
 
     @Test
@@ -37,25 +41,25 @@ internal class CachingServiceTest {
         //given
         val keysToPersonsMap = IntStream.generate { randomNumberBounded() }
             .limit(89)
-            .mapToObj {
-                Pair(it.toString(), person)
-            }
-            .toList().associate { it.first to it.second }
+            .mapToObj { Pair(it.toString(), testPerson) }
+            .toList()
+            .associate { it.first to it.second }
 
         //when
         cachingService.putAll(keysToPersonsMap)
 
         //then
-        val sizeInCache = cachingService.getIfPresent(keysToPersonsMap.keys.toList()).size
-
-        assertEquals(keysToPersonsMap.size, sizeInCache)
+        cachingService.getIfPresent(keysToPersonsMap.keys.toList())
+            .buffer(225)
+            .subscribe {
+                logger.info("size created: ${keysToPersonsMap.size}, size from cache: ${it.size}")
+                assertEquals(keysToPersonsMap.size, it.size)
+            }
     }
 
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
-        val person = Person("test", "test", "test", "test")
-
-        private fun randomNumberBounded(): Int = (Math.random() * 100).toInt()
+        val testPerson = Entity.Person("test", "test", "test", "test")
     }
 }
