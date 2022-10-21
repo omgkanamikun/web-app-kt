@@ -1,11 +1,12 @@
 package com.github.omgkanamikun.application.handler
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.omgkanamikun.application.service.FairyService
+import com.github.omgkanamikun.application.service.EntityService
 import com.github.omgkanamikun.application.util.emptyCompany
 import com.github.omgkanamikun.application.util.emptyPerson
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -20,16 +21,18 @@ import reactor.kotlin.core.publisher.toMono
  * @since 17/10/2022
  */
 @Component
-class HttpRequestHandler(val service: FairyService, val objectMapper: ObjectMapper) {
+class HttpRequestHandler(val service: EntityService, val mapper: ObjectMapper) {
+
+    @Value("\${application.marker}")
+    private lateinit var marker: String
 
     fun handlePersonRequest(request: ServerRequest): Mono<ServerResponse> {
-        logger.info("handling person request")
-
         return request.toMono()
+            .doOnNext { logger.info("handling person request") }
             .flatMap { service.getPerson() }
             .switchIfEmpty { Mono.just(emptyPerson()) }
             .doOnNext { logger.info("generated $it") }
-            .map { objectMapper.writeValueAsString(it) }
+            .map { mapper.writeValueAsString(it) }
             .flatMap {
                 logger.info("response json: ${it ?: "null"}")
                 ServerResponse.ok()
@@ -39,13 +42,12 @@ class HttpRequestHandler(val service: FairyService, val objectMapper: ObjectMapp
     }
 
     fun handleCompanyRequest(request: ServerRequest): Mono<ServerResponse> {
-        logger.info("handling company request")
-
         return request.toMono()
+            .doOnNext { logger.info("handling company request") }
             .flatMap { service.getCompany() }
             .switchIfEmpty { Mono.just(emptyCompany()) }
             .doOnNext { logger.info("generated $it") }
-            .map { objectMapper.writeValueAsString(it) }
+            .map { mapper.writeValueAsString(it) }
             .flatMap {
                 logger.info("response json: ${it ?: "null"}")
                 ServerResponse.ok()
@@ -54,22 +56,36 @@ class HttpRequestHandler(val service: FairyService, val objectMapper: ObjectMapp
             }
     }
 
-    fun handleInfoRequest(serverRequest: ServerRequest): Mono<ServerResponse> {
-        logger.info("handling info request")
-
-        return serverRequest.toMono()
-            .map { Mono.just(RESPONSE_BODY_TEXT_INFO) }
+    fun handleInfoRequest(request: ServerRequest): Mono<ServerResponse> {
+        return request.toMono()
+            .doOnNext { logger.info("handling info request") }
+            .map {
+                Mono.just(
+                    "Instance marker: $marker\n" +
+                            TEXT_INFO_BODY
+                )
+            }
             .flatMap {
-                logger.info("response: ${it ?: "null"}")
                 ServerResponse.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body<String>(it)
+            }
+    }
+
+    fun handleBadRequest(request: ServerRequest): Mono<ServerResponse> {
+        return request.toMono()
+            .doOnNext { logger.error("handling bad request") }
+            .map { Mono.just(BAD_REQUEST_BODY) }
+            .flatMap {
+                ServerResponse.badRequest()
+                    .contentType(MediaType.TEXT_PLAIN)
                     .body<String>(it)
             }
     }
 
     companion object {
-        private const val RESPONSE_BODY_TEXT_INFO = "query params: ?content = can be person or company"
-
+        private const val TEXT_INFO_BODY = "request query params: ?content = person or company"
+        private const val BAD_REQUEST_BODY = "bad request"
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)
     }
 }

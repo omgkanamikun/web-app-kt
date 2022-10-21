@@ -5,3 +5,7 @@ Accept: application/json
 ### GET request for a person
 GET http://{{host}}:8080/app?content=person
 Accept: application/json
+
+### GET request for an info
+GET http://{{host}}:8080/app
+Accept: application/json

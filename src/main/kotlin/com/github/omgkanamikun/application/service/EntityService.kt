@@ -9,13 +9,13 @@ import reactor.core.publisher.Mono
  * @since 17/10/2022
  */
 @Service
-class FairyService(val cachingService: CachingService) {
+class EntityService(val cachingService: CachingService) {
 
-    fun getPerson(): Mono<Entity> {
+    fun getPerson(): Mono<Entity.Person> {
         return cachingService.getRandomPerson()
     }
 
-    fun getCompany(): Mono<Entity> {
+    fun getCompany(): Mono<Entity.Company> {
         return cachingService.getRandomCompany()
     }
 }

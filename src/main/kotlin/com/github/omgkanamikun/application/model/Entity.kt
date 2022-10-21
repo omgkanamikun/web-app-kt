@@ -6,10 +6,17 @@ package com.github.omgkanamikun.application.model
  */
 sealed interface Entity {
     data class Person(
-        val firstName: String, val lastName: String, val dateOfBirth: String, val nationality: String
+        val id: String,
+        val firstName: String,
+        val lastName: String,
+        val dateOfBirth: String,
+        val nationality: String
     ) : Entity
 
     data class Company(
-        val name: String, val domain: String, val email: String
+        val id: String,
+        val name: String,
+        val domain: String,
+        val email: String
     ) : Entity
 }

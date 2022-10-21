@@ -28,6 +28,9 @@ class RouterFunctionConfig {
         ).andRoute(
             RequestPredicates.GET(URL),
             handler::handleInfoRequest
+        ).andRoute(
+            RequestPredicates.all(),
+            handler::handleBadRequest
         )
     }
 

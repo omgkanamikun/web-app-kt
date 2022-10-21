@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.stats.CacheStats
 import com.github.omgkanamikun.application.model.Entity
 import com.github.omgkanamikun.application.util.fairy
+import com.github.omgkanamikun.application.util.generateId
 import com.github.omgkanamikun.application.util.randomNumberBounded
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -18,81 +19,94 @@ import javax.annotation.PostConstruct
  * @author Vlad Kondratenko, email: omgkanamikun@gmail.com
  * @since 17/10/2022
  */
-class CachingService(private val cache: Cache<String, Entity>) {
+class CachingService(private val cache: Cache<String, Pair<Entity.Person, Entity.Company>>) {
+
+    private val ids: MutableList<String> = mutableListOf()
 
     @PostConstruct
     fun setUp() {
-        IntStream.generate { randomNumberBounded() }
-            .limit(100)
-            .mapToObj(::createPersonOrCompany)
+        IntStream.iterate(0, intGenerator())
+            .limit(101)
+            .mapToObj {
+                createEntities()
+            }
             .flatMap { Stream.of(it) }
-            .toList()
-            .forEach(Mono<out Tuple2<out Entity, String>>::subscribe)
+            .forEach { tuple2 ->
+                tuple2.doOnNext { element ->
+                    logger.debug("cache population tick")
+                    val id = element.t1
+                    val entities = element.t2
+                    cache.put(id, Pair(entities.t1, entities.t2))
+                }.subscribe()
+            }
 
         logger.info("cache was populated")
     }
 
+    private fun intGenerator() = { number: Int -> number + 1 }
+
     fun stats(): Mono<CacheStats> = Mono.justOrEmpty(cache.stats())
 
-    fun putAll(allElements: Map<String, Entity>) = cache.putAll(allElements)
+    fun putAll(allElements: Map<String, Pair<Entity.Person, Entity.Company>>) = cache.putAll(allElements)
 
-    fun getRandomPerson(): Mono<Entity> {
+    fun getRandomPerson(): Mono<Entity.Person> {
         return Flux.from(pickRandomIdFromList())
             .flatMap { getIfPresent(it) }
-            .filter { it is Entity.Person }
+            .map { it.first }
             .next()
     }
 
-    fun getRandomCompany(): Mono<Entity> {
+    fun getRandomCompany(): Mono<Entity.Company> {
         return Flux.from(pickRandomIdFromList())
             .flatMap { getIfPresent(it) }
-            .filter { it is Entity.Company }
+            .map { it.second }
             .next()
     }
 
-    fun getIfPresent(keys: List<String>): Flux<Entity> {
-        return Flux.create {
+    fun getIfPresent(keys: List<String>): Flux<MutableMap<String, Pair<Entity.Person, Entity.Company>>> {
+        return Flux.create { sink ->
             val allPresent = cache.getAllPresent(keys)
-            allPresent.forEach { (_, u) ->
-                it.next(u)
-            }
+            repeat(allPresent.size) { sink.next(allPresent) }
         }
     }
 
-    private fun getIfPresent(key: String): Mono<Entity> {
+    private fun getIfPresent(key: String): Mono<Pair<Entity.Person, Entity.Company>> {
         return Mono.justOrEmpty(cache.getIfPresent(key))
     }
 
-    private fun createPersonOrCompany(it: Int): Mono<out Tuple2<out Entity, String>> {
-        return if (it % 2 == 0) {
-            createPersonInCache()
-        } else createCompanyInCache()
-    }
+    private fun createEntities(): Mono<Tuple2<String, Tuple2<Entity.Person, Entity.Company>>> {
 
-    private fun createPersonInCache(): Mono<Tuple2<Entity.Person, String>> {
-        return Mono.just(fairy().person())
+        val idMono = Mono.just(generateId())
+            .doOnNext {
+                ids.add(it)
+            }
+
+        val personMono = Mono.just(fairy().person())
             .map {
                 Entity.Person(
-                    it.firstName, it.lastName, it.dateOfBirth.toString(), it.nationality.name
+                    "P${generateId()}",
+                    it.firstName,
+                    it.lastName,
+                    it.dateOfBirth.toString(),
+                    it.nationality.name
                 )
             }
-            .zipWith(Mono.just(randomNumberBounded().toString()))
-            .doOnNext {
-                cache.put(it.t2, it.t1)
-            }
-    }
 
-    private fun createCompanyInCache(): Mono<Tuple2<Entity.Company, String>> {
-        return Mono.just(fairy().company())
-            .map { Entity.Company(it.name, it.domain, it.email) }
-            .zipWith(Mono.just(randomNumberBounded().toString()))
-            .doOnNext {
-                cache.put(it.t2, it.t1)
+        val companyMono = Mono.just(fairy().company())
+            .map {
+                Entity.Company(
+                    "C${generateId()}",
+                    it.name,
+                    it.domain,
+                    it.email
+                )
             }
+
+        return idMono.zipWith(personMono.zipWith(companyMono))
     }
 
     private fun pickRandomIdFromList(): Mono<String> {
-        return Mono.just(randomNumberBounded().toString())
+        return Mono.just(ids[randomNumberBounded(ids.size)])
     }
 
     companion object {

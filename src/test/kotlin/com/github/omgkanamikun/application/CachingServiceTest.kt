@@ -1,8 +1,8 @@
 package com.github.omgkanamikun.application
 
-import com.github.omgkanamikun.application.model.Entity
 import com.github.omgkanamikun.application.service.CachingService
-import com.github.omgkanamikun.application.util.randomNumberBounded
+import com.github.omgkanamikun.application.util.emptyCompany
+import com.github.omgkanamikun.application.util.emptyPerson
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -39,9 +39,10 @@ internal class CachingServiceTest {
     @Test
     fun cacheTest() {
         //given
-        val keysToPersonsMap = IntStream.generate { randomNumberBounded() }
-            .limit(89)
-            .mapToObj { Pair(it.toString(), testPerson) }
+        val keysToPersonsMap = IntStream.range(0, 101)
+            .mapToObj {
+                Pair(it.toString(), Pair(emptyPerson(), emptyCompany()))
+            }
             .toList()
             .associate { it.first to it.second }
 
@@ -50,7 +51,7 @@ internal class CachingServiceTest {
 
         //then
         cachingService.getIfPresent(keysToPersonsMap.keys.toList())
-            .buffer(225)
+            .buffer(100)
             .subscribe {
                 logger.info("size created: ${keysToPersonsMap.size}, size from cache: ${it.size}")
                 assertEquals(keysToPersonsMap.size, it.size)
@@ -59,7 +60,5 @@ internal class CachingServiceTest {
 
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)
-
-        val testPerson = Entity.Person("test", "test", "test", "test")
     }
 }
