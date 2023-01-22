@@ -1,4 +1,4 @@
-package com.github.omgkanamikun.application.model
+package com.github.omgkanamikun.application.handler.model
 
 /**
  * @author Vlad Kondratenko, email: omgkanamikun@gmail.com

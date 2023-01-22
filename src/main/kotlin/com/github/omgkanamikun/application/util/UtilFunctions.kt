@@ -1,7 +1,7 @@
 package com.github.omgkanamikun.application.util
 
 import com.devskiller.jfairy.Fairy
-import com.github.omgkanamikun.application.model.Entity
+import com.github.omgkanamikun.application.handler.model.Entity
 import java.util.*
 
 /**

@@ -2,15 +2,17 @@ package com.github.omgkanamikun.application.service
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.stats.CacheStats
-import com.github.omgkanamikun.application.model.Entity
+import com.github.omgkanamikun.application.handler.model.Entity
 import com.github.omgkanamikun.application.util.fairy
 import com.github.omgkanamikun.application.util.generateId
 import com.github.omgkanamikun.application.util.randomNumberBounded
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.scheduling.annotation.Scheduled
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.util.function.Tuple2
+import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream
 import java.util.stream.Stream
 import javax.annotation.PostConstruct
@@ -19,14 +21,20 @@ import javax.annotation.PostConstruct
  * @author Vlad Kondratenko, email: omgkanamikun@gmail.com
  * @since 17/10/2022
  */
-class CachingService(private val cache: Cache<String, Pair<Entity.Person, Entity.Company>>) {
+class CachingService(
+    private val cache: Cache<String, Pair<Entity.Person, Entity.Company>>,
+    private val cacheSize: String
+) {
 
     private val ids: MutableList<String> = mutableListOf()
 
     @PostConstruct
+    @Scheduled(fixedRate = 14, timeUnit = TimeUnit.SECONDS)
     fun setUp() {
+        ids.clear()
+
         IntStream.iterate(0, intGenerator())
-            .limit(101)
+            .limit(cacheSize.toLong())
             .mapToObj {
                 createEntities()
             }

@@ -1,6 +1,6 @@
 package com.github.omgkanamikun.application.service
 
-import com.github.omgkanamikun.application.model.Entity
+import com.github.omgkanamikun.application.handler.model.Entity
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 

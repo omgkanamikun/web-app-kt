@@ -18,19 +18,15 @@ class RouterFunctionConfig {
     @Bean
     fun routerFunction(handler: HttpRequestHandler): RouterFunction<ServerResponse> {
         return RouterFunctions.route(
-            RequestPredicates.GET(URL)
-                .and(RequestPredicates.queryParam("content", "person")),
+            RequestPredicates.GET(URL).and(RequestPredicates.queryParam("content", "person")),
             handler::handlePersonRequest
         ).andRoute(
-            RequestPredicates.GET(URL)
-                .and(RequestPredicates.queryParam("content", "company")),
+            RequestPredicates.GET(URL).and(RequestPredicates.queryParam("content", "company")),
             handler::handleCompanyRequest
         ).andRoute(
-            RequestPredicates.GET(URL),
-            handler::handleInfoRequest
+            RequestPredicates.GET(URL), handler::handleInfoRequest
         ).andRoute(
-            RequestPredicates.all(),
-            handler::handleBadRequest
+            RequestPredicates.all(), handler::handleBadRequest
         )
     }
 
