@@ -22,7 +22,7 @@ class CacheConfig {
         return CachingService(
             Caffeine.newBuilder()
                 .maximumSize(cacheSize.toLong())
-                .expireAfterWrite(10, TimeUnit.SECONDS)
+                .expireAfterWrite(60, TimeUnit.SECONDS)
                 .build(),
             cacheSize
         )

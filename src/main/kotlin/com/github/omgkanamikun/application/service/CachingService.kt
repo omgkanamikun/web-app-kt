@@ -6,6 +6,7 @@ import com.github.omgkanamikun.application.handler.model.Entity
 import com.github.omgkanamikun.application.util.fairy
 import com.github.omgkanamikun.application.util.generateId
 import com.github.omgkanamikun.application.util.randomNumberBounded
+import jakarta.annotation.PostConstruct
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -15,7 +16,6 @@ import reactor.util.function.Tuple2
 import java.util.concurrent.TimeUnit
 import java.util.stream.IntStream
 import java.util.stream.Stream
-import javax.annotation.PostConstruct
 
 /**
  * @author Vlad Kondratenko, email: omgkanamikun@gmail.com
@@ -29,7 +29,7 @@ class CachingService(
     private val ids: MutableList<String> = mutableListOf()
 
     @PostConstruct
-    @Scheduled(fixedRate = 14, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 61, timeUnit = TimeUnit.SECONDS)
     fun setUp() {
         ids.clear()
 
